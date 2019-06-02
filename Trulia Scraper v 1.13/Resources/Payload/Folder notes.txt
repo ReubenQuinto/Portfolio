@@ -1,0 +1,13 @@
+Notes:
+
+File below was extracted on 18.10.06 (file 1) but was interrupted in the middle of execution. Thus was deployed a second time a few hours later:
+	18.10.06 Notes Append 1 of 2 - Address URL List - FINAL
+
+File below was extracted on 18.10.06 (file 2) and completed the processing/scraping of Address URL List - PreProcessing (2 of 2):
+	18.10.06 Notes Append 2 of 2 - Address URL List - FINAL
+
+THIS IS THE MAIN FILE. File below is the appendage of the two files mentioned above. :
+	staging_address.csv
+
+This file was constructed manually:
+	Address URL List - PreProcessing (2 of 2)
