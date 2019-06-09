@@ -1,0 +1,4 @@
+- Outlook email files would go in here. 
+- Outlook emails have been removed for privacy reasons.
+- Please review the model in '(2) Model' for codebase.
+- Any questions about this section please feel free to ask.
