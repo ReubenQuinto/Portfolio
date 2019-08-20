@@ -1,0 +1,3 @@
+1. document.addEventListener('<event>') is different than document.getElementById('<id>').onclick
+    1. Are nested event addEventListener bad practice?
+2. you can put post data in a div to hold the data; just incase when another eventlistener executes and wipes out the data variable

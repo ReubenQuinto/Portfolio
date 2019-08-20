@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="static/style.css" type="text/css">
+    
+    <script>
+
+    let blue = 'rgb(31, 119, 180);'
+    let grey = 'rgb(204, 204, 204);'
+
+    const plotData = [{
+                    x: [],
+                    y: [],
+                    type: 'bar',
+                    marker: {
+                        color: blue
+                    }
+                }]
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        document.getElementById('form').onsubmit = () => {
+            const userInput_stock = document.getElementById('stock').value;
+            const userInput_numSimulations = document.getElementById('userInput_numSimulations').value;
+            const request = new XMLHttpRequest;
+
+            request.open('POST', '/data');
+
+            request.onload = () => {
+                let data = JSON.parse(request.responseText);
+
+                let buckets = data['output'][0]['distribution'].map( x => { return x.bucket; })
+                let freq = data['output'][0]['distribution'].map( x => { return x.frequency; })
+
+                plotData[0]['x'] = buckets
+                plotData[0]['y'] = freq
+
+                Plotly.newPlot('myDiv', plotData);
+
+                // save the data by putting it in a div object
+                document.getElementById('myDivData').value = data
+            }
+
+            let send_user_input = new FormData();
+            send_user_input.append('user_input_1', userInput_numSimulations)
+            send_user_input.append('user_input_2', userInput_stock)
+            request.send(send_user_input);
+
+            return false;
+
+        };
+
+        document.addEventListener('click', () => {
+
+                // Init objects
+                let data = document.getElementById('myDivData').value
+                
+                let data_buckets = data['output'][0]['distribution'].map( x => { return x.bucket; })
+                let data_freq = data['output'][0]['distribution'].map( x => { return x.frequency; })
+                let data_sorted_list = data['output'][0]['sorted_list'].map( x => { return x.return; })
+                let userInput_percentile = document.getElementById('percentile').value
+                let percentile_monteCarlo_percentileIndexPosition = Math.round(userInput_percentile/100 * (data_sorted_list.length)) - 1
+
+                // Testing area
+                console.log("buckets:       " + data_buckets[0])
+                console.log("datatype:      " + typeof(data_buckets[0]))
+                console.log("percentile:    " + percentile_monteCarlo_percentileIndexPosition)
+                console.log("length:        " + data_sorted_list.length)
+                console.log("datatype:      " + typeof(data_sorted_list[percentile_monteCarlo_percentileIndexPosition]))
+                console.log("MC Conf Level: " + data_sorted_list[percentile_monteCarlo_percentileIndexPosition])
+                console.log("logical test:  " + (data_buckets[0] <= data_sorted_list[percentile_monteCarlo_percentileIndexPosition]))
+                console.log("stock name:    " + data['output'][0]['stock'])
+                
+                // // shade functions:
+                // left tail:
+                let shade_leftTail = () => {
+                    return data_buckets.map( x => { 
+                                if ( (x <= data_sorted_list[percentile_monteCarlo_percentileIndexPosition]) ) {
+                                    return blue;
+                                } else {
+                                    return grey;
+                                }
+                    });
+                };
+
+                // right tail:
+                let shade_rightTail = () => {
+                    return data_buckets.map( x => {
+                            if ( (x >= data_sorted_list[data_sorted_list.length - 1 - percentile_monteCarlo_percentileIndexPosition]) ) {
+                                return blue;
+                            } else {
+                                return grey;
+                            }
+                    })
+                }
+
+                // two tailed:
+                let shade_twoTailed = () => {
+                    let index_median = Math.round(((data_sorted_list.length-1)/2));
+                    let index_median_upperConfidence = Math.round(index_median + (percentile_monteCarlo_percentileIndexPosition/2));
+                    let index_median_lowerConfidence = Math.round(index_median - (percentile_monteCarlo_percentileIndexPosition/2));
+
+                    // // Testing Area
+                    // console.log(index_median)
+                    // console.log(index_median_upperConfidence)
+                    // console.log(index_median_lowerConfidence)
+
+                    return data_buckets.map( x => {
+                            if ( ((x >= data_sorted_list[index_median_lowerConfidence]) && (x <= data_sorted_list[index_median_upperConfidence])) ) {
+                                return blue;
+                            } else {
+                                return grey;
+                            }
+                    });
+                };
+
+                // // reshading function
+                let buckets = data['output'][0]['distribution'].map( x => { return x.bucket; })
+                let freq = data['output'][0]['distribution'].map( x => { return x.frequency; })
+
+                let buttons = document.getElementsByName('grp1');
+                let shade = ""
+                for (var i = 0; i < buttons.length; i++) {
+                    if (buttons[i].checked == true) {
+                        if (buttons[i].value == 'Left Tail') {
+                            shade = shade_leftTail();
+                        } else if (buttons[i].value == 'Right Tail') {
+                            shade = shade_rightTail();
+                        } else if (buttons[i].value == "Two Tail") {
+                            shade = shade_twoTailed();
+                        }
+                    }
+                }
+
+                plotData[0]['x'] = buckets
+                plotData[0]['y'] = freq
+                plotData[0]['marker']['color'] = shade
+
+                Plotly.newPlot('myDiv', plotData);
+
+        });
+    });
+    
+    </script>
+
+{% endblock %}
+
+
+{% block body %}
+<div class="container">
+
+    <div class="page-header">
+        <h1> Monte Carlo Simulation</h1>
+    </div>
+
+    <div class="jumbotron">
+        
+        Select Stock:
+        <select id="stock">
+                <option value="^GSPC">S&P 500</option>
+                <option value="TSLA">Tesla</option>
+                <option value="GOOG">Google</option>
+                <option value="JPM">JP Morgan Chase</option>
+                <option value="TM">Toyota</option>
+            </select>
+
+        <form id="form">
+            Number of Simulations: <input id="userInput_numSimulations"><br>
+            <input type="submit" value="Simulate">
+        </form>
+    </div>
+
+    <br>
+
+    <div class="jumbotron">
+        <!-- put plotly here -->
+        <div id="myDiv"></div>
+        <!-- put the post data here -->
+        <div id="myDivData"></div>
+        
+        <div id="stock">
+            Select Area: <input id="radio1" name="grp1" type="radio" value="Left Tail"> Left Tail </input>
+                        <input id="radio2" name="grp1" type="radio" value="Two Tail"> Two Tail </input>
+                        <input id="radio3" name="grp1" type="radio" value="Right Tail"> Right Tail </input><br>
+            Confidence Level %: <input type="text" id="percentile" value="100" > </input>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
