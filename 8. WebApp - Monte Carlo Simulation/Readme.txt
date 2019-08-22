@@ -1,7 +1,7 @@
 Objective: 
 	1. Calculate the probability of a 1 day yield of 5 different stocks.
 
-The solution: 
+The Solution: 
 	- 1 day yields are generated on the python/flask server by: calculating percent differences on adj closing prices. Then extracting, from the percent change array, the average and standard deviation. Those parameters are passed into a Gaussian/normal probability density function and the output is a simulated yield. I've wrote a custom python library to get the array of simulated output to create buckets and frequency counts, then post that information to an api I created in Flask. The front-end interacts with the api through AJAX POST requests.
 	- The end-user on the front-end can input: which stock to select, how many times to run the simulation, an area of interest, and a confidence level.
 	- The Monte Carlo Simulator is a statistical web application.
